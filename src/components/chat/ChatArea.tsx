@@ -1,24 +1,36 @@
-// src/components/chat/ChatArea.tsx
-"use client";
-
 import { useState, useRef, useEffect } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+import { Bot, User } from "lucide-react";
 import { ChatInput } from "./ChatInput";
-import { MessageActions } from "./MessageActions";
-import { QuickActions } from "./QuickActions";
-import { MessageContent } from "./MessageContent";
 
 const WelcomeScreen = () => (
   <div className="flex-1 flex items-center justify-center bg-background">
-    <div className="text-center">
-      <h2 className="text-2xl font-semibold mb-2">How can I help you today?</h2>
+    <div className="text-center px-4">
+      <h2 className="text-2xl font-semibold mb-2 text-foreground">How can I help you today?</h2>
       <p className="text-muted-foreground">
         Start a conversation by typing a message below.
       </p>
+    </div>
+  </div>
+);
+
+const TypingIndicator = () => (
+  <div className="flex items-start gap-3 px-6">
+    <div className="flex-shrink-0 w-9 h-9 rounded-full bg-[hsl(var(--chat-avatar-assistant))] flex items-center justify-center">
+      <Bot className="w-5 h-5 text-white" />
+    </div>
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium text-foreground">AI Assistant</span>
+      </div>
+      <div className="flex gap-1">
+        <div className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:0ms]" />
+        <div className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:150ms]" />
+        <div className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce [animation-delay:300ms]" />
+      </div>
     </div>
   </div>
 );
@@ -30,9 +42,12 @@ export function ChatArea() {
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      const scrollElement = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollElement) {
+        scrollElement.scrollTop = scrollElement.scrollHeight;
+      }
     }
-  }, [currentConversation?.messages]);
+  }, [currentConversation?.messages, isLoading]);
 
   const handleSendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
@@ -49,9 +64,9 @@ export function ChatArea() {
     // Mock assistant response
     setTimeout(() => {
       const demoResponses = [
-        `This is a mock response to demonstrate the chat functionality.`,
-        `Great question! Let me break this down for you...`,
-        `Here's the information you requested about "${messageText}".`,
+        `Based on your message, I can provide some insights... This is a mock response to demonstrate the chat functionality. In a real application, this would be connected to an actual AI service.`,
+        `Great question! Let me break this down for you. This is a demonstration of how the chat interface works with proper message formatting and styling.`,
+        `Here's the information you requested about "${messageText}". This response showcases the clean, modern design of our chat interface.`,
       ];
       addMessage({
         role: "assistant",
@@ -60,13 +75,6 @@ export function ChatArea() {
       });
       setIsLoading(false);
     }, 1500);
-  };
-
-  const handleRegenerate = () => {
-    const lastUserMessage = [...(currentConversation?.messages || [])]
-      .reverse()
-      .find((m) => m.role === "user");
-    if (lastUserMessage) handleSendMessage(lastUserMessage.content);
   };
 
   if (!currentConversation) {
@@ -82,69 +90,57 @@ export function ChatArea() {
   const hasMessages = currentConversation.messages.length > 0;
 
   return (
-    <div className="flex h-full flex-col bg-background border-l">
-      {/* Chat Scroll Area */}
-      {hasMessages ? (
-        <ScrollArea className="flex-1 p-6" ref={scrollRef}>
-          <div className="space-y-6 max-w-3xl mx-auto">
-            {currentConversation.messages.map((message, index) => (
-              <div
-                key={message.id}
-                className={cn(
-                  "flex items-start gap-3",
-                  message.role === "user"
-                    ? "justify-end text-right"
-                    : "justify-start text-left"
-                )}
-              >
+    <div className="flex h-full flex-col bg-background">
+      {/* Chat Messages Area */}
+      {hasMessages || isLoading ? (
+        <ScrollArea className="flex-1" ref={scrollRef}>
+          <div className="py-6 space-y-6">
+            {currentConversation.messages.map((message) => (
+              <div key={message.id} className="flex items-start gap-3 px-6">
+                {/* Avatar */}
                 <div
                   className={cn(
-                    "rounded-2xl px-5 py-3 shadow-sm max-w-[80%] transition-all",
+                    "flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center",
                     message.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-br-none"
-                      : "bg-muted text-foreground rounded-bl-none"
+                      ? "bg-[hsl(var(--chat-avatar-user))]"
+                      : "bg-[hsl(var(--chat-avatar-assistant))]"
                   )}
                 >
-                  <MessageContent content={message.content} />
+                  {message.role === "user" ? (
+                    <User className="w-5 h-5 text-foreground" />
+                  ) : (
+                    <Bot className="w-5 h-5 text-white" />
+                  )}
+                </div>
 
-                  <div className="flex justify-between items-center mt-2 border-t border-border/40 pt-1">
+                {/* Message Content */}
+                <div className="flex-1 space-y-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground">
+                      {message.role === "user" ? "You" : "AI Assistant"}
+                    </span>
                     <span className="text-xs text-muted-foreground">
                       {new Date(message.timestamp).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
                     </span>
-                    <MessageActions
-                      content={message.content}
-                      messageId={message.id}
-                      role={message.role}
-                      onRegenerate={
-                        message.role === "assistant" &&
-                        index === currentConversation.messages.length - 1
-                          ? handleRegenerate
-                          : undefined
-                      }
-                    />
                   </div>
-
-                  {message.role === "assistant" &&
-                    index === currentConversation.messages.length - 1 && (
-                      <QuickActions onAction={handleSendMessage} />
+                  <div
+                    className={cn(
+                      "rounded-2xl px-4 py-3 inline-block max-w-full break-words",
+                      message.role === "user"
+                        ? "bg-[hsl(var(--chat-user-bg))] text-[hsl(var(--chat-user-fg))] border border-border"
+                        : "bg-[hsl(var(--chat-assistant-bg))] text-[hsl(var(--chat-assistant-fg))]"
                     )}
+                  >
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  </div>
                 </div>
               </div>
             ))}
 
-            {isLoading && (
-              <div className="flex items-center justify-start gap-3">
-                <div className="bg-muted px-5 py-3 rounded-2xl shadow-sm flex items-center gap-2">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                  <span className="text-muted-foreground text-sm">
-                    AI Assistant is typing...
-                  </span>
-                </div>
-              </div>
-            )}
+            {isLoading && <TypingIndicator />}
           </div>
         </ScrollArea>
       ) : (
@@ -152,7 +148,7 @@ export function ChatArea() {
       )}
 
       {/* Input Box */}
-      <div className="border-t bg-background px-4 py-3">
+      <div className="border-t border-border bg-background px-6 py-4">
         <ChatInput onSubmit={handleSendMessage} isLoading={isLoading} />
       </div>
     </div>
