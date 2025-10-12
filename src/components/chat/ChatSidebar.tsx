@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { MessageSquare, Trash2, Pencil, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { MessageSquare, Trash2, Pencil, Plus, ChevronLeft, ChevronRight, Mail, Users} from "lucide-react";
 
 // Add proper TypeScript interfaces
 interface Conversation {
@@ -182,56 +182,75 @@ export default function ChatSidebar({
   };
 
   return (
-    <div
-      className={`flex flex-col h-full bg-white border-r border-gray-200 transition-all duration-300 ${
-        collapsed ? "w-14" : "w-64"
-      }`}
+
+<div
+  className={`flex flex-col h-full bg-white border-r border-gray-200 transition-all duration-300 ${
+    collapsed ? "w-14" : "w-64"
+  }`}
+>
+  {/* Header */}
+  <div className="flex items-center justify-between p-4 border-b border-gray-100">
+    {!collapsed && (
+      <h2 className="text-sm font-semibold text-gray-700">Conversations</h2>
+    )}
+    <Button
+      onClick={() => {
+        setCollapsed(!collapsed);
+        if (collapseButtonRef.current) {
+          collapseButtonRef.current.focus();
+        }
+      }}
+      className="p-1 hover:bg-gray-100 rounded-md"
+      aria-label={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+      ref={collapseButtonRef}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-100">
-        {!collapsed && <h2 className="text-sm font-semibold text-gray-700">Conversations</h2>}
+      {collapsed ? (
+        <ChevronRight className="h-4 w-4 text-gray-600" />
+      ) : (
+        <ChevronLeft className="h-4 w-4 text-gray-600" />
+      )}
+    </Button>
+  </div>
+
+  {/* Middle Section */}
+  <div className="flex-1 flex flex-col overflow-y-auto">
+    {/* New Chat Button */}
+    {!collapsed && (
+      <div className="px-4 mt-4">
         <Button
-          onClick={() => {
-            setCollapsed(!collapsed);
-            if (collapseButtonRef.current) {
-              collapseButtonRef.current.focus();
-            }
-          }}
-          className="p-1 hover:bg-gray-100 rounded-md"
-          aria-label={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-          ref={collapseButtonRef}
+          onClick={handleNewChat}
+          className="w-full py-2 bg-blue-600 text-white hover:bg-blue-700 text-sm flex items-center justify-center gap-2"
+          aria-label="Create new chat"
         >
-          {collapsed ? (
-            <ChevronRight className="h-4 w-4 text-gray-600" />
-          ) : (
-            <ChevronLeft className="h-4 w-4 text-gray-600" />
-          )}
+          <Plus className="h-4 w-4" /> New Chat
         </Button>
       </div>
+    )}
 
-      {/* New Chat Button */}
-      {!collapsed && (
-        <div className="px-4 mt-4">
-          <Button
-            onClick={handleNewChat}
-            className="w-full py-2 bg-blue-600 text-white hover:bg-blue-700 text-sm flex items-center justify-center gap-2"
-            aria-label="Create new chat"
-          >
-            <Plus className="h-4 w-4" /> New Chat
-          </Button>
-        </div>
-      )}
-
-      {/* Conversation List */}
-      {!collapsed && (
-        <ConversationList
-          conversations={conversations}
-          currentConversationId={currentConversationId}
-          onSelectConversation={onSelectConversation}
-          onDeleteConversation={onDeleteConversation}
-          onRenameConversation={onRenameConversation}
-        />
-      )}
+    {/* Conversation List (fill remaining space) */}
+    <div className="flex-1 px-4 py-4">
+      {/* Your conversation items go here */}
     </div>
+  </div>
+
+  {/* Bottom Section (Organisation / Invite) */}
+  {!collapsed && (
+    <div className="px-4 py-4 border-t border-gray-100">
+      <div className="flex items-center gap-2 mb-3">
+        <Users className="h-4 w-4 text-gray-500" />
+        <span className="text-sm font-medium text-gray-700">
+          Organisation
+        </span>
+      </div>
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <Mail className="h-3 w-3" />
+          <span>Invite friends via email</span>
+        </div>
+      </div>
+    </div>
+  )}
+</div>
+
   );
 }
